@@ -1,12 +1,20 @@
 name: Release
 
-# Push a tag like v1.0 to publish every package to nuget.org (see RELEASING.md).
+# Publishes every package to nuget.org (see RELEASING.md). Start it either way:
+#   - Actions tab → Release → "Run workflow", entering the release number (e.g. 0.0), or
+#   - push a tag like v0.0.
 on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release number, minor.patch (e.g. 0.0 publishes EfMigrationPack 8.0.0 and dotnet-ef-pack 1.0.0)'
+        required: true
+        type: string
   push:
     tags: ['v*.*']
 
 permissions:
-  contents: write   # create the GitHub release
+  contents: write   # create the tag and the GitHub release
   id-token: write   # trusted publishing: lets nuget.org verify this workflow
 
 jobs:
@@ -19,13 +27,23 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Read the release number from the tag
+      - name: Work out the release number
         id: version
         shell: bash
+        env:
+          INPUT_RELEASE: ${{ inputs.release }}
         run: |
-          release="${GITHUB_REF_NAME#v}"
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+              echo "Run the release from the main branch." >&2
+              exit 1
+            fi
+            release="${INPUT_RELEASE#v}"
+          else
+            release="${GITHUB_REF_NAME#v}"
+          fi
           if [[ ! "$release" =~ ^[0-9]+\.[0-9]+$ ]]; then
-            echo "Tag '$GITHUB_REF_NAME' must look like v1.0 (minor.patch)." >&2
+            echo "Release number '$release' must look like 1.0 (minor.patch)." >&2
             exit 1
           fi
           echo "release=$release" >> "$GITHUB_OUTPUT"
@@ -49,8 +67,11 @@ jobs:
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
 
+      # Creates the v<release> tag on this commit if it doesn't exist (manual runs), and the GitHub release.
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.version.outputs.release }}
+          target_commitish: ${{ github.sha }}
           files: artifacts/packages/*
           generate_release_notes: true
