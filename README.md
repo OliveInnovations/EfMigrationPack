@@ -5,7 +5,7 @@
 [![EfMigrationPack](https://img.shields.io/nuget/v/EfMigrationPack?label=EfMigrationPack)](https://www.nuget.org/packages/EfMigrationPack)
 [![dotnet-ef-pack](https://img.shields.io/nuget/v/dotnet-ef-pack?label=dotnet-ef-pack)](https://www.nuget.org/packages/dotnet-ef-pack)
 [![EfMigrationPack.Tools](https://img.shields.io/nuget/v/EfMigrationPack.Tools?label=EfMigrationPack.Tools)](https://www.nuget.org/packages/EfMigrationPack.Tools)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/YOUR_BMC_HANDLE)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/thepjo)
 
 A project with hundreds of migrations builds slowly, mostly because every `.Designer.cs` file holds a complete copy
 of your model as it was at that point. ef-pack folds the migrations into a single **packed migration** with one
@@ -209,11 +209,11 @@ Only compress on one branch at a time: two branches compressing concurrently bot
 
 ## Support
 
-If ef-pack saves you build time, you can [buy me a coffee](https://www.buymeacoffee.com/YOUR_BMC_HANDLE). Thank you!
+If ef-pack saves you build time, you can [buy me a coffee](https://www.buymeacoffee.com/thepjo). Thank you!
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/YOUR_BMC_HANDLE)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/thepjo)
 
-Bugs and ideas: [GitHub issues](https://github.com/YOUR_GITHUB_USER/ef-pack/issues).
+Bugs and ideas: [GitHub issues](https://github.com/OliveInnovations/EfMigrationPack/issues).
 
 ## Building from source
 
@@ -222,8 +222,8 @@ Bugs and ideas: [GitHub issues](https://github.com/YOUR_GITHUB_USER/ef-pack/issu
 ```
 
 Needs the .NET 10 SDK. Release numbering and publishing are described in
-[RELEASING.md](https://github.com/YOUR_GITHUB_USER/ef-pack/blob/main/RELEASING.md).
+[RELEASING.md](https://github.com/OliveInnovations/EfMigrationPack/blob/main/RELEASING.md).
 
 ## License
 
-[MIT](https://github.com/YOUR_GITHUB_USER/ef-pack/blob/main/LICENSE)
+[MIT](https://github.com/OliveInnovations/EfMigrationPack/blob/main/LICENSE)

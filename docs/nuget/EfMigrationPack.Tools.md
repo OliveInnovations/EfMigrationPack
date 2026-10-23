@@ -3,7 +3,7 @@
 **Pack hundreds of EF Core migrations into one, from Visual Studio's Package Manager Console.** Used like
 `Add-Migration`.
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/YOUR_BMC_HANDLE)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/thepjo)
 
 Every `.Designer.cs` file holds a full copy of your model, so a project with hundreds of migrations builds slowly.
 `Compress-Migrations` folds the migrations into one **packed migration** with a single target model, and moves the
@@ -44,4 +44,4 @@ Expand-Migrations                # restore the newest pack's original migrations
 Prefer the command line? Use [`dotnet-ef-pack`](https://www.nuget.org/packages/dotnet-ef-pack).
 
 Full documentation, the recommended workflow and limitations:
-[github.com/YOUR_GITHUB_USER/ef-pack](https://github.com/YOUR_GITHUB_USER/ef-pack)
+[github.com/OliveInnovations/EfMigrationPack](https://github.com/OliveInnovations/EfMigrationPack)

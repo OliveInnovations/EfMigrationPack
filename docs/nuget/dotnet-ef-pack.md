@@ -2,7 +2,7 @@
 
 **Pack hundreds of EF Core migrations into one, from the command line.** Used like `dotnet ef`.
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/YOUR_BMC_HANDLE)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/thepjo)
 
 Every `.Designer.cs` file holds a full copy of your model, so a project with hundreds of migrations builds slowly.
 `dotnet ef-pack compress` folds the migrations into one **packed migration** with a single target model, and moves
@@ -41,4 +41,4 @@ Prefer Visual Studio? The same commands are in the Package Manager Console via
 [`EfMigrationPack.Tools`](https://www.nuget.org/packages/EfMigrationPack.Tools).
 
 Full documentation, the recommended workflow and limitations:
-[github.com/YOUR_GITHUB_USER/ef-pack](https://github.com/YOUR_GITHUB_USER/ef-pack)
+[github.com/OliveInnovations/EfMigrationPack](https://github.com/OliveInnovations/EfMigrationPack)

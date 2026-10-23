@@ -7,13 +7,13 @@
     <VersionSuffix Condition="'$(IsRelease)' != 'true'">dev</VersionSuffix>
   </PropertyGroup>
 
-  <!-- Package metadata. Replace YOUR_GITHUB_USER with the repository owner. -->
+  <!-- Package metadata. Repository: github.com/OliveInnovations/EfMigrationPack. -->
   <PropertyGroup>
     <Authors>Paul Oliver</Authors>
     <Copyright>Copyright (c) 2026 Paul Oliver</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/YOUR_GITHUB_USER/ef-pack</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/YOUR_GITHUB_USER/ef-pack.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/OliveInnovations/EfMigrationPack</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/OliveInnovations/EfMigrationPack.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>efcore;entity-framework-core;ef-core;migrations;build-time</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

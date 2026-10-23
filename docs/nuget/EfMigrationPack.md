@@ -2,7 +2,7 @@
 
 **Runtime for packed EF Core migrations.** Reference it from the project that contains your migrations.
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/YOUR_BMC_HANDLE)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/thepjo)
 
 Hundreds of migrations make a project slow to build, because every `.Designer.cs` file holds a full copy of your
 model. The `dotnet-ef-pack` tool folds them into one **packed migration** with a single target model and moves the
@@ -57,4 +57,4 @@ Use the [`dotnet-ef-pack`](https://www.nuget.org/packages/dotnet-ef-pack) comman
 [`EfMigrationPack.Tools`](https://www.nuget.org/packages/EfMigrationPack.Tools) Package Manager Console commands.
 
 Full documentation, the recommended workflow and limitations:
-[github.com/YOUR_GITHUB_USER/ef-pack](https://github.com/YOUR_GITHUB_USER/ef-pack)
+[github.com/OliveInnovations/EfMigrationPack](https://github.com/OliveInnovations/EfMigrationPack)
