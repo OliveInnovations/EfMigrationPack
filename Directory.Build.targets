@@ -1,0 +1,16 @@
+<Project>
+
+  <!--
+    Each package shows its own readme on nuget.org: docs/nuget/<PackageId>.md.
+    The repository's README.md is for GitHub. This lives in .targets, not .props, because
+    PackageId is only known after each project file has been read.
+  -->
+  <PropertyGroup Condition="'$(IsPackable)' != 'false'">
+    <PackageReadmeFile>$(PackageId).md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsPackable)' != 'false'">
+    <None Include="$(MSBuildThisFileDirectory)docs/nuget/$(PackageId).md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+</Project>

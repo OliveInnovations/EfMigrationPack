@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Runtime library referenced by projects that contain packed migrations.
+
+    Built once per EF Core major version from the same source:
+        dotnet pack src/EfMigrationPack -c Release -p:EfMajor=8
+    The package's major version matches EF Core's (EfMigrationPack 8.x.y is for EF Core 8), the same
+    convention database providers use. Each build depends on Microsoft.EntityFrameworkCore.Relational
+    [EfMajor.0.0, EfMajor+1.0.0) so NuGet stops a mismatched install.
+  -->
+
+  <PropertyGroup>
+    <EfMajor Condition="'$(EfMajor)' == ''">10</EfMajor>
+    <EfMajorNext>$([MSBuild]::Add($(EfMajor), 1))</EfMajorNext>
+  </PropertyGroup>
+
+  <!-- The lowest target framework each EF Core major supports. -->
+  <PropertyGroup>
+    <TargetFramework Condition="'$(EfMajor)' == '6' Or '$(EfMajor)' == '7'">net6.0</TargetFramework>
+    <TargetFramework Condition="'$(EfMajor)' == '8' Or '$(EfMajor)' == '9'">net8.0</TargetFramework>
+    <TargetFramework Condition="'$(EfMajor)' == '10'">net10.0</TargetFramework>
+    <DefineConstants>$(DefineConstants);EFCORE$(EfMajor)</DefineConstants>
+    <!-- net6.0 is out of support; building it is intentional for EF Core 6 and 7 users. -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <LangVersion>10</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>EfMigrationPack</RootNamespace>
+
+    <PackageId>EfMigrationPack</PackageId>
+    <VersionPrefix>$(EfMajor).$(PackRelease)</VersionPrefix>
+    <Description>Runtime for packed EF Core migrations: applies each original migration inside a pack only if the database hasn't recorded it, and reports every migration as it runs. Use the package version whose major matches your EF Core major. Pack and unpack with the dotnet-ef-pack tool or the EfMigrationPack.Tools Package Manager Console commands.</Description>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="[$(EfMajor).0.0, $(EfMajorNext).0.0)" />
+  </ItemGroup>
+
+  <Target Name="EfPackCheckEfMajor" BeforeTargets="_CheckForInvalidConfigurationAndPlatform">
+    <Error Condition="'$(TargetFramework)' == ''" Text="EfMajor '$(EfMajor)' is not supported. Use 6, 7, 8, 9 or 10." />
+  </Target>
+
+</Project>

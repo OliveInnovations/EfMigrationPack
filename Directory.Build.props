@@ -1,0 +1,32 @@
+<Project>
+
+  <!-- Release numbering: see RELEASING.md. -->
+  <PropertyGroup>
+    <!-- Minor.patch shared by every package: EfMigrationPack {EfMajor}.{PackRelease}, tools 1.{PackRelease}. -->
+    <PackRelease Condition="'$(PackRelease)' == ''">0.0</PackRelease>
+    <VersionSuffix Condition="'$(IsRelease)' != 'true'">dev</VersionSuffix>
+  </PropertyGroup>
+
+  <!-- Package metadata. Replace YOUR_GITHUB_USER with the repository owner. -->
+  <PropertyGroup>
+    <Authors>Paul Oliver</Authors>
+    <Copyright>Copyright (c) 2026 Paul Oliver</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/YOUR_GITHUB_USER/ef-pack</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/YOUR_GITHUB_USER/ef-pack.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>efcore;entity-framework-core;ef-core;migrations;build-time</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!-- Each EF Core build of the runtime gets its own obj/ and bin/ so the builds don't overwrite each other. -->
+  <PropertyGroup Condition="'$(EfMajor)' != ''">
+    <BaseIntermediateOutputPath>obj\ef$(EfMajor)\</BaseIntermediateOutputPath>
+    <BaseOutputPath>bin\ef$(EfMajor)\</BaseOutputPath>
+  </PropertyGroup>
+
+  <!-- The nuget.org readme for each package is wired up in Directory.Build.targets. -->
+
+</Project>

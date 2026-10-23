@@ -1,0 +1,56 @@
+name: Release
+
+# Push a tag like v1.0 to publish every package to nuget.org (see RELEASING.md).
+on:
+  push:
+    tags: ['v*.*']
+
+permissions:
+  contents: write   # create the GitHub release
+  id-token: write   # trusted publishing: lets nuget.org verify this workflow
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Read the release number from the tag
+        id: version
+        shell: bash
+        run: |
+          release="${GITHUB_REF_NAME#v}"
+          if [[ ! "$release" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            echo "Tag '$GITHUB_REF_NAME' must look like v1.0 (minor.patch)." >&2
+            exit 1
+          fi
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+
+      - name: Build all packages
+        shell: pwsh
+        run: ./build.ps1 -PackRelease '${{ steps.version.outputs.release }}' -Release
+
+      # Trusted publishing: exchanges this workflow's GitHub identity for a one-hour nuget.org key,
+      # so no long-lived API key is stored. Requires a trusted publishing policy on nuget.org (RELEASING.md).
+      - name: Log in to nuget.org
+        id: nuget
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push to nuget.org
+        run: >
+          dotnet nuget push "artifacts/packages/*.nupkg"
+          --api-key "${{ steps.nuget.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/packages/*
+          generate_release_notes: true
