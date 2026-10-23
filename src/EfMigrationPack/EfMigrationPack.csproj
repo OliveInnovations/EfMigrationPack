@@ -23,6 +23,12 @@
     <DefineConstants>$(DefineConstants);EFCORE$(EfMajor)</DefineConstants>
     <!-- net6.0 is out of support; building it is intentional for EF Core 6 and 7 users. -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <!--
+      Each EF build writes to obj/ef{N} and bin/ef{N}. The SDK only excludes the current build's folders
+      from the **/*.cs glob, so without this the EF 7 build compiles the EF 6 build's generated
+      AssemblyInfo.cs as well, and fails with duplicate assembly attributes.
+    -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <PropertyGroup>
