@@ -27,7 +27,8 @@ belongs to whichever account or organization the push key was issued for.
    - Owner: the organization
    - Repository owner and repository: the GitHub owner and repository name of this repo
    - Workflow file: `release.yml`
-   - Environment: leave empty (the workflow doesn't use one)
+   - Environment: `production` (the workflow's job runs in that GitHub environment)
+   - Packages: `EfMigrationPack*` and `dotnet-ef-pack` (the CLI's ID doesn't share the prefix)
 
    This lets the `Release` workflow obtain a one-hour push key for packages owned by the organization, so no
    long-lived API key is stored in GitHub. For a private repository the policy is provisional until the first

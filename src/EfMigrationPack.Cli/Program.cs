@@ -4,20 +4,21 @@ internal static class Program
 {
     private const string Usage =
 @"usage:
-  dotnet ef-pack compress [--project <folder|.csproj>] [--context <DbContext>] [--single-file] [--dry-run]
-  dotnet ef-pack expand   [--project <folder|.csproj>] [--context <DbContext>] [--all] [--force] [--dry-run]
+  dotnet ef-pack pack   [--project <folder|.csproj>] [--context <DbContext>] [--single-file] [--dry-run]
+  dotnet ef-pack unpack [--project <folder|.csproj>] [--context <DbContext>] [--all] [--force] [--dry-run]
 
-  compress   Packs every migration that is not already packed into a new packed migration
+  pack       Packs every migration that is not already packed into a new packed migration
              (PackedMigrationsNNNN) and moves the original files into PackedMigrationsNNNN.zip.
-             (alias: compress-migrations)
-  expand     Restores the newest pack's original migrations from its zip and removes the pack.
-             --all expands every pack, newest first. (alias: expand-migrations)
+  unpack     Restores the newest pack's original migrations from its zip and removes the pack.
+             --all unpacks every pack, newest first.
 
   --project      Project folder or .csproj (default: current folder).
   --context      DbContext name; required when the project has migrations for several contexts.
-  --single-file  compress: put every step in the pack's main file instead of a .Steps folder.
-  --force        expand: continue even if the pack was edited after compressing or files would be overwritten.
-  --dry-run      Show what would change without changing anything.";
+  --single-file  pack: put every step in the pack's main file instead of a .Steps folder.
+  --force        unpack: continue even if the pack was edited after packing or files would be overwritten.
+  --dry-run      Show what would change without changing anything.
+
+  pack-migrations and unpack-migrations are accepted too, as are compress and expand from version 1.0.";
 
     public static int Main(string[] args)
     {
@@ -29,8 +30,8 @@ internal static class Program
 
         var command = args[0].ToLowerInvariant() switch
         {
-            "compress" or "compress-migrations" => Command.Compress,
-            "expand" or "expand-migrations" => Command.Expand,
+            "pack" or "pack-migrations" or "compress" or "compress-migrations" => Command.Pack,
+            "unpack" or "unpack-migrations" or "expand" or "expand-migrations" => Command.Unpack,
             _ => (Command?)null,
         };
 
@@ -55,7 +56,7 @@ internal static class Program
 
         try
         {
-            return command == Command.Compress ? Compressor.Run(options) : Expander.Run(options);
+            return command == Command.Pack ? Packer.Run(options) : Unpacker.Run(options);
         }
         catch (PackException ex)
         {
@@ -67,8 +68,8 @@ internal static class Program
 
 internal enum Command
 {
-    Compress,
-    Expand,
+    Pack,
+    Unpack,
 }
 
 internal sealed class Options
@@ -104,13 +105,13 @@ internal sealed class Options
                 case "--dry-run":
                     o.DryRun = true;
                     break;
-                case "--single-file" when command == Command.Compress:
+                case "--single-file" when command == Command.Pack:
                     o.SingleFile = true;
                     break;
-                case "--all" when command == Command.Expand:
+                case "--all" when command == Command.Unpack:
                     o.All = true;
                     break;
-                case "--force" when command == Command.Expand:
+                case "--force" when command == Command.Unpack:
                     o.Force = true;
                     break;
                 default:

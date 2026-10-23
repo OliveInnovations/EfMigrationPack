@@ -2,7 +2,7 @@
 # Uses the project selected in the console's "Default project" drop-down unless -Project is given,
 # the same way Add-Migration and Update-Database do.
 
-function Compress-Migrations {
+function Pack-Migrations {
     <#
     .SYNOPSIS
         Packs every migration that is not already packed into a new packed migration.
@@ -13,7 +13,7 @@ function Compress-Migrations {
         migration files into PackedMigrationsNNNN.zip.
 
     .PARAMETER Context
-        The DbContext to compress migrations for. Required when the project has several.
+        The DbContext to pack migrations for. Required when the project has several.
 
     .PARAMETER Project
         The project to use. Defaults to the Package Manager Console's default project.
@@ -32,7 +32,7 @@ function Compress-Migrations {
         [switch] $DryRun
     )
 
-    $arguments = @('compress') + (Get-EfPackProjectArguments $Project)
+    $arguments = @('pack') + (Get-EfPackProjectArguments $Project)
     if ($Context) { $arguments += @('--context', $Context) }
     if ($SingleFile) { $arguments += '--single-file' }
     if ($DryRun -or $WhatIfPreference) { $arguments += '--dry-run' }
@@ -40,26 +40,26 @@ function Compress-Migrations {
     Invoke-EfPack $arguments
 }
 
-function Expand-Migrations {
+function Unpack-Migrations {
     <#
     .SYNOPSIS
         Restores the newest packed migration's original migrations and removes the pack.
 
     .DESCRIPTION
         Unzips PackedMigrationsNNNN.zip back to the original locations and deletes the packed
-        migration. Packs are expanded newest first; -All expands every pack.
+        migration. Packs are unpacked newest first; -All unpacks every pack.
 
     .PARAMETER Context
-        The DbContext to expand migrations for. Required when the project has several.
+        The DbContext to unpack migrations for. Required when the project has several.
 
     .PARAMETER Project
         The project to use. Defaults to the Package Manager Console's default project.
 
     .PARAMETER All
-        Expand every pack, newest first.
+        Unpack every pack, newest first.
 
     .PARAMETER Force
-        Expand even if the pack was edited after compressing or restored files would overwrite others.
+        Unpack even if the pack was edited after packing or restored files would overwrite others.
 
     .PARAMETER DryRun
         Show what would change without changing anything. -WhatIf does the same.
@@ -73,7 +73,7 @@ function Expand-Migrations {
         [switch] $DryRun
     )
 
-    $arguments = @('expand') + (Get-EfPackProjectArguments $Project)
+    $arguments = @('unpack') + (Get-EfPackProjectArguments $Project)
     if ($Context) { $arguments += @('--context', $Context) }
     if ($All) { $arguments += '--all' }
     if ($Force) { $arguments += '--force' }
@@ -114,4 +114,8 @@ function Invoke-EfPack([string[]] $Arguments) {
     }
 }
 
-Export-ModuleMember -Function Compress-Migrations, Expand-Migrations
+# The names used before version 1.1, kept so existing scripts keep working.
+Set-Alias -Name Compress-Migrations -Value Pack-Migrations
+Set-Alias -Name Expand-Migrations -Value Unpack-Migrations
+
+Export-ModuleMember -Function Pack-Migrations, Unpack-Migrations -Alias Compress-Migrations, Expand-Migrations

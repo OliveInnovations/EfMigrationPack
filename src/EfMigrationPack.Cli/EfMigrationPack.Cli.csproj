@@ -23,7 +23,7 @@
     <ToolCommandName>dotnet-ef-pack</ToolCommandName>
     <PackageId>dotnet-ef-pack</PackageId>
     <VersionPrefix>1.$(PackRelease)</VersionPrefix>
-    <Description>Command-line tool for packing EF Core migrations: "dotnet ef-pack compress" packs migrations into one migration and archives the originals in a zip; "dotnet ef-pack expand" restores them. Works with EF Core 6 and later; projects reference the EfMigrationPack runtime package.</Description>
+    <Description>Command-line tool for packing EF Core migrations: "dotnet ef-pack pack" packs migrations into one migration and archives the originals in a zip; "dotnet ef-pack unpack" restores them. Works with EF Core 6 and later; projects reference the EfMigrationPack runtime package.</Description>
     <PackageTags>$(PackageTags);dotnet-tool</PackageTags>
   </PropertyGroup>
 

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    EfMigrationPack.Tools: Package Manager Console commands Compress-Migrations and Expand-Migrations,
+    EfMigrationPack.Tools: Package Manager Console commands Pack-Migrations and Unpack-Migrations,
     the counterpart of Microsoft.EntityFrameworkCore.Tools. Contains no library: tools/ holds init.ps1,
     the PowerShell module and the CLI binaries, which build.ps1 publishes to artifacts/cli-bin first.
   -->
@@ -16,7 +16,7 @@
 
     <PackageId>EfMigrationPack.Tools</PackageId>
     <VersionPrefix>1.$(PackRelease)</VersionPrefix>
-    <Description>Package Manager Console commands for packing EF Core migrations: Compress-Migrations and Expand-Migrations. Works with EF Core 6 and later; projects reference the EfMigrationPack runtime package.</Description>
+    <Description>Package Manager Console commands for packing EF Core migrations: Pack-Migrations and Unpack-Migrations. Works with EF Core 6 and later; projects reference the EfMigrationPack runtime package.</Description>
   </PropertyGroup>
 
   <ItemGroup>

@@ -41,15 +41,15 @@ internal static class StepBuilder
     private static readonly string[] BaseMemberNames = { "TargetModel", "UpOperations", "DownOperations" };
 
     /// <summary>
-    /// Builds the nested step class. Deterministic: expand rebuilds it from the archived originals and
-    /// compares it with the pack to detect edits made after compressing.
+    /// Builds the nested step class. Deterministic: unpack rebuilds it from the archived originals and
+    /// compares it with the pack to detect edits made after packing.
     /// </summary>
     public static Step Build(ScannedClass migration, List<string> warnings)
     {
         var id = migration.Id!;
         var nested = NestedName(id);
 
-        // Order parts by path so compress (absolute paths) and expand (relative paths) agree.
+        // Order parts by path so pack (absolute paths) and unpack (relative paths) agree.
         var parts = migration.Parts.OrderBy(p => Code.NormalizePath(p.File.Path), StringComparer.Ordinal).ToList();
         var members = parts
             .SelectMany(p => p.Class.Members)

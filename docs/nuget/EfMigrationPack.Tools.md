@@ -6,8 +6,8 @@
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/thepjo)
 
 Every `.Designer.cs` file holds a full copy of your model, so a project with hundreds of migrations builds slowly.
-`Compress-Migrations` folds the migrations into one **packed migration** with a single target model, and moves the
-originals into a zip outside the build. `Expand-Migrations` puts them back.
+`Pack-Migrations` folds the migrations into one **packed migration** with a single target model, and moves the
+originals into a zip outside the build. `Unpack-Migrations` puts them back.
 
 The commands only read and write your project's source files: they never connect to a database or build the
 project. Works with EF Core 6 and later.
@@ -27,9 +27,9 @@ EF Core major), with `UsePackedMigrations()` on the DbContext options.
 The commands work on the console's **Default project**, like the EF Core commands.
 
 ```
-Compress-Migrations -WhatIf      # show what would change
-Compress-Migrations              # create PackedMigrationsNNNN and PackedMigrationsNNNN.zip
-Expand-Migrations                # restore the newest pack's original migrations
+Pack-Migrations -WhatIf    # show what would change
+Pack-Migrations            # create PackedMigrationsNNNN and PackedMigrationsNNNN.zip
+Unpack-Migrations          # restore the newest pack's original migrations
 ```
 
 | Parameter | |
@@ -37,9 +37,11 @@ Expand-Migrations                # restore the newest pack's original migrations
 | `-Project <name>` | Use another project instead of the Default project. |
 | `-Context <DbContext>` | Needed when the project has migrations for more than one context. |
 | `-DryRun` / `-WhatIf` | Show what would change without changing anything. |
-| `-SingleFile` | Compress-Migrations: put every original migration in the pack's main file. |
-| `-All` | Expand-Migrations: expand every pack, newest first. |
-| `-Force` | Expand-Migrations: continue even if the pack was edited after compressing. |
+| `-SingleFile` | Pack-Migrations: put every original migration in the pack's main file. |
+| `-All` | Unpack-Migrations: unpack every pack, newest first. |
+| `-Force` | Unpack-Migrations: continue even if the pack was edited after packing. |
+
+The 1.0 names `Compress-Migrations` and `Expand-Migrations` still work.
 
 Prefer the command line? Use [`dotnet-ef-pack`](https://www.nuget.org/packages/dotnet-ef-pack).
 
