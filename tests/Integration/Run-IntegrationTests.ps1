@@ -18,6 +18,9 @@
      10. applies the migrations again and checks nothing new is applied
      11. adds a third migration and packs again under the same name, which must give a new pack id
      12. applies that pack to the database from step 8, which must run only the third migration
+     13. adds a fourth migration while the pack exists
+     14. unpacks, which must leave the model snapshot (which includes the fourth migration) untouched, then applies
+         the migrations, which must run only the fourth
 
     Needs the .NET runtime each EF Core major targets: .NET 6 for EF Core 6 and 7, .NET 8 for 8 and 9,
     .NET 10 for 10.
@@ -144,13 +147,13 @@ function Get-Columns($Dump, [string] $Table) {
     return (@($property.Value) -join ',')
 }
 
-function Assert-Database($Dump, [string[]] $ExpectedHistory, [string] $What, [string] $ExpectedWidgets = 'Id,Name,Description') {
+function Assert-Database($Dump, [string[]] $ExpectedHistory, [string] $What, [string] $ExpectedWidgets = 'Id,Name,Description', [string] $ExpectedCategories = 'Id,Title') {
     $history = @($Dump.history) -join ', '
     Assert-True ($history -eq ($ExpectedHistory -join ', ')) "$What history is [$history], expected [$($ExpectedHistory -join ', ')]."
     $widgets = Get-Columns $Dump 'Widgets'
     $categories = Get-Columns $Dump 'Categories'
     Assert-True ($widgets -eq $ExpectedWidgets) "$What Widgets columns are [$widgets], expected [$ExpectedWidgets]."
-    Assert-True ($categories -eq 'Id,Title') "$What Categories columns are [$categories], expected [Id,Title]."
+    Assert-True ($categories -eq $ExpectedCategories) "$What Categories columns are [$categories], expected [$ExpectedCategories]."
 }
 
 # Runs Pack-Migrations from the Package Manager Console module and returns the new pack's migration id.
@@ -399,6 +402,32 @@ function Test-EfMajor([int] $EfMajor) {
         Assert-Matches $output "1 of 3 migration\(s\) to apply, 2 already applied" 'the new pack to report 1 of 3 migrations to apply'
         Assert-Matches $output ([regex]::Escape("Applied packed migration '$thirdId' (1/1)")) "$thirdId to be reported as applied"
         Assert-Database (Get-Dump $freshDb) @($packId, $secondPackId, $initialId, $secondId, $thirdId) 'The database' 'Id,Name,Description,Quantity'
+
+        $step = '13. Add a migration while the pack exists'
+        Write-Host "  $step"
+        Start-Sleep -Seconds 1
+        Set-ModelStage 'v4'
+        Invoke-Ef $absentDb @('migrations', 'add', 'AddNotes') | Out-Null
+        $files = @(Get-ChildItem $migrations -Filter '*_AddNotes.cs' | Where-Object { $_.Name -notlike '*.Designer.cs' })
+        Assert-True ($files.Count -eq 1) 'the AddNotes migration file was created.'
+        $fourthId = $files[0].BaseName
+        Assert-MigrationContains $fourthId @('"Notes"')
+        $snapshotHash = (Get-FileHash $snapshotFile -Algorithm SHA256).Hash
+
+        $step = '14. Unpack, keeping the newer migration and the snapshot, then apply'
+        Write-Host "  $step"
+        Invoke-EfPack @('unpack') | Out-Null
+        Assert-True ((Get-FileHash $snapshotFile -Algorithm SHA256).Hash -eq $snapshotHash) 'unpacking left the model snapshot, which includes AddNotes, unchanged.'
+        foreach ($expected in @("$fourthId.cs", "$fourthId.Designer.cs", "$thirdId.cs", "$initialId.cs")) {
+            Assert-True (Test-Path (Join-Path $migrations $expected)) "Migrations/$expected exists after unpacking."
+        }
+        Assert-True (-not (Test-Path (Join-Path $migrations "$secondPackId.cs"))) 'unpacking removed the pack.'
+
+        # On EF Core 9 and later this also checks the snapshot still matches the model (PendingModelChangesWarning).
+        $output = Invoke-Ef $freshDb @('database', 'update')
+        Assert-Matches $output ([regex]::Escape("Applying migration '$fourthId'")) "$fourthId to be applied"
+        Assert-True ($output -notmatch "Applying migration '(?!$([regex]::Escape($fourthId)))") "only $fourthId was applied."
+        Assert-Database (Get-Dump $freshDb) @($packId, $secondPackId, $initialId, $secondId, $thirdId, $fourthId) 'The database' 'Id,Name,Description,Quantity' 'Id,Title,Notes'
     }
     catch {
         $message = "${step}: $($_.Exception.Message)"
