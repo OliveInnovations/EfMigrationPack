@@ -4,11 +4,11 @@
 
 .DESCRIPTION
     EfMigrationPack           runtime, one package per EF Core major (6, 7, 8, 9, 10)
-    dotnet-ef-pack            command-line tool ("dotnet ef-pack")
+    EfMigrationPack.Cli       command-line tool ("dotnet ef-pack")
     EfMigrationPack.Tools     Package Manager Console commands
 
 .PARAMETER PackRelease
-    Minor.patch for this release, e.g. 1.0 gives EfMigrationPack 8.1.0 and dotnet-ef-pack 1.1.0.
+    Minor.patch for this release, e.g. 1.0 gives EfMigrationPack 8.1.0 and EfMigrationPack.Cli 1.1.0.
     Defaults to the value in Directory.Build.props.
 
 .PARAMETER Release
@@ -49,7 +49,7 @@ foreach ($ef in $EfMajors) {
     Invoke-Dotnet pack src/EfMigrationPack/EfMigrationPack.csproj @common "-p:EfMajor=$ef" -o artifacts/packages
 }
 
-Write-Host '== dotnet-ef-pack' -ForegroundColor Cyan
+Write-Host '== EfMigrationPack.Cli' -ForegroundColor Cyan
 Invoke-Dotnet pack src/EfMigrationPack.Cli/EfMigrationPack.Cli.csproj @common -o artifacts/packages
 Invoke-Dotnet publish src/EfMigrationPack.Cli/EfMigrationPack.Cli.csproj @common -o artifacts/cli-bin
 

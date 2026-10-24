@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    dotnet-ef-pack: the command-line tool, invoked as "dotnet ef-pack" (like "dotnet ef").
+    EfMigrationPack.Cli: the command-line tool, invoked as "dotnet ef-pack" (like "dotnet ef").
+    The package ID and the command name are separate: the ID dotnet-ef-pack is not available on nuget.org.
     It only parses C# source, so one build works for every EF Core version.
     net6.0 + RollForward=Major: runs on any installed .NET 6 or later runtime.
   -->
@@ -21,7 +22,7 @@
 
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotnet-ef-pack</ToolCommandName>
-    <PackageId>dotnet-ef-pack</PackageId>
+    <PackageId>EfMigrationPack.Cli</PackageId>
     <VersionPrefix>1.$(PackRelease)</VersionPrefix>
     <Description>Command-line tool for packing EF Core migrations: "dotnet ef-pack pack" packs migrations into one migration and archives the originals in a zip; "dotnet ef-pack unpack" restores them. Works with EF Core 6 and later; projects reference the EfMigrationPack runtime package.</Description>
     <PackageTags>$(PackageTags);dotnet-tool</PackageTags>

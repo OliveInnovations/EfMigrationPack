@@ -72,10 +72,15 @@ internal sealed class ScannedClass
 
     public bool IsPlainMigration => !IsPacked && BaseTypeNames.Contains("Migration");
 
-    public int PackSequence =>
-        Id is { Length: >= 14 } id
-        && int.TryParse(id.AsSpan(0, 14), NumberStyles.None, CultureInfo.InvariantCulture, out var sequence)
-            ? sequence
+    /// <summary>
+    /// The 14-digit prefix of a pack's id as a number: 00yyMMddHHmmss, or a plain sequence (1, 2, ...) for packs
+    /// made by versions before named packs.
+    /// </summary>
+    public long PackNumber =>
+        Id is { Length: > 15 } id
+        && id[14] == '_'
+        && long.TryParse(id.AsSpan(0, 14), NumberStyles.None, CultureInfo.InvariantCulture, out var number)
+            ? number
             : throw new PackException($"Packed migration {Key} has an unexpected id '{Id}'.");
 
     /// <summary>The nested [PackedStep("id")] classes of a pack, keyed by original migration id.</summary>

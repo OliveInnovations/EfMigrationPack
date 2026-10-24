@@ -27,13 +27,14 @@ EF Core major), with `UsePackedMigrations()` on the DbContext options.
 The commands work on the console's **Default project**, like the EF Core commands.
 
 ```
-Pack-Migrations -WhatIf    # show what would change
-Pack-Migrations            # create PackedMigrationsNNNN and PackedMigrationsNNNN.zip
-Unpack-Migrations          # restore the newest pack's original migrations
+Pack-Migrations Sprint10 -WhatIf    # show what would change
+Pack-Migrations Sprint10            # create the pack Sprint10 and Sprint10.zip
+Unpack-Migrations                   # restore the newest pack's original migrations
 ```
 
 | Parameter | |
 |---|---|
+| `-Name <name>` (first position) | Pack-Migrations: the pack's name, such as the sprint or release it's for. Its migration id is `00yyMMddHHmmss_<name>`, so it never repeats. |
 | `-Project <name>` | Use another project instead of the Default project. |
 | `-Context <DbContext>` | Needed when the project has migrations for more than one context. |
 | `-DryRun` / `-WhatIf` | Show what would change without changing anything. |
@@ -43,7 +44,7 @@ Unpack-Migrations          # restore the newest pack's original migrations
 
 The 1.0 names `Compress-Migrations` and `Expand-Migrations` still work.
 
-Prefer the command line? Use [`dotnet-ef-pack`](https://www.nuget.org/packages/dotnet-ef-pack).
+Prefer the command line? Use [`EfMigrationPack.Cli`](https://www.nuget.org/packages/EfMigrationPack.Cli).
 
 Full documentation, the recommended workflow and limitations:
 [github.com/OliveInnovations/EfMigrationPack](https://github.com/OliveInnovations/EfMigrationPack)

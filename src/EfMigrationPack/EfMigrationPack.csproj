@@ -40,7 +40,7 @@
 
     <PackageId>EfMigrationPack</PackageId>
     <VersionPrefix>$(EfMajor).$(PackRelease)</VersionPrefix>
-    <Description>Runtime for packed EF Core migrations: applies each original migration inside a pack only if the database hasn't recorded it, and reports every migration as it runs. Use the package version whose major matches your EF Core major. Pack and unpack with the dotnet-ef-pack tool or the EfMigrationPack.Tools Package Manager Console commands.</Description>
+    <Description>Runtime for packed EF Core migrations: applies each original migration inside a pack only if the database hasn't recorded it, and reports every migration as it runs. Use the package version whose major matches your EF Core major. Pack and unpack with the "dotnet ef-pack" command (EfMigrationPack.Cli) or the EfMigrationPack.Tools Package Manager Console commands.</Description>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>

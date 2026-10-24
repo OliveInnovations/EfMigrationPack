@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       release:
-        description: 'Release number, minor.patch (e.g. 0.0 publishes EfMigrationPack 8.0.0 and dotnet-ef-pack 1.0.0)'
+        description: 'Release number, minor.patch (e.g. 0.0 publishes EfMigrationPack 8.0.0 and EfMigrationPack.Cli 1.0.0)'
         required: true
         type: string
   push:
@@ -72,12 +72,39 @@ jobs:
         with:
           user: ${{ secrets.NUGET_USER }}
 
+      # Skips only versions nuget.org already lists, so a re-run after a partial failure works. Everything else is
+      # pushed without --skip-duplicate, because that flag reports every 409 as "already exists", including
+      # nuget.org refusing the package ID, and the release would look successful when it wasn't.
       - name: Push to nuget.org
-        run: >
-          dotnet nuget push "artifacts/packages/*.nupkg"
-          --api-key "${{ steps.nuget.outputs.NUGET_API_KEY }}"
-          --source https://api.nuget.org/v3/index.json
-          --skip-duplicate
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ steps.nuget.outputs.NUGET_API_KEY }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($package in Get-ChildItem artifacts/packages -Filter '*.nupkg') {
+              $zip = [IO.Compression.ZipFile]::OpenRead($package.FullName)
+              try {
+                  $entry = $zip.Entries | Where-Object { $_.FullName -notlike '*/*' -and $_.Name -like '*.nuspec' } | Select-Object -First 1
+                  $reader = [IO.StreamReader]::new($entry.Open())
+                  [xml] $nuspec = $reader.ReadToEnd()
+                  $reader.Dispose()
+              }
+              finally { $zip.Dispose() }
+
+              $id = $nuspec.package.metadata.id
+              $version = $nuspec.package.metadata.version
+              $published = @()
+              try { $published = @((Invoke-RestMethod "https://api.nuget.org/v3-flatcontainer/$($id.ToLowerInvariant())/index.json").versions) }
+              catch { } # 404: a package that has never been published
+
+              if ($published -contains $version.ToLowerInvariant()) {
+                  Write-Host "$id $version is already on nuget.org; skipping."
+                  continue
+              }
+
+              dotnet nuget push $package.FullName --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json
+              if ($LASTEXITCODE -ne 0) { throw "Pushing $id $version failed; see the message above." }
+          }
 
       # Creates the v<release> tag on this commit if it doesn't exist (manual runs), and the GitHub release.
       - name: Create GitHub release

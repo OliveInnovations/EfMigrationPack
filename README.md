@@ -3,7 +3,7 @@
 **Pack hundreds of EF Core migrations into one, without losing any of them.**
 
 [![EfMigrationPack](https://img.shields.io/nuget/v/EfMigrationPack?label=EfMigrationPack)](https://www.nuget.org/packages/EfMigrationPack)
-[![dotnet-ef-pack](https://img.shields.io/nuget/v/dotnet-ef-pack?label=dotnet-ef-pack)](https://www.nuget.org/packages/dotnet-ef-pack)
+[![EfMigrationPack.Cli](https://img.shields.io/nuget/v/EfMigrationPack.Cli?label=EfMigrationPack.Cli)](https://www.nuget.org/packages/EfMigrationPack.Cli)
 [![EfMigrationPack.Tools](https://img.shields.io/nuget/v/EfMigrationPack.Tools?label=EfMigrationPack.Tools)](https://www.nuget.org/packages/EfMigrationPack.Tools)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/thepjo)
 
@@ -23,7 +23,7 @@ Works with EF Core 6, 7, 8, 9 and 10, on any relational provider.
 | Package | What it is |
 |---|---|
 | [`EfMigrationPack`](https://www.nuget.org/packages/EfMigrationPack) | Runtime, referenced by the project containing your migrations. **Use the version whose major matches your EF Core major** (8.x for EF Core 8). |
-| [`dotnet-ef-pack`](https://www.nuget.org/packages/dotnet-ef-pack) | Command-line tool: `dotnet ef-pack`, used like `dotnet ef`. |
+| [`EfMigrationPack.Cli`](https://www.nuget.org/packages/EfMigrationPack.Cli) | Command-line tool: `dotnet ef-pack`, used like `dotnet ef`. |
 | [`EfMigrationPack.Tools`](https://www.nuget.org/packages/EfMigrationPack.Tools) | Package Manager Console commands `Pack-Migrations` and `Unpack-Migrations`, like `Add-Migration`. |
 
 ### Requirements
@@ -38,7 +38,7 @@ Nothing beyond what your EF Core version already needs:
 | 9 | 9.x | .NET 8 or later |
 | 10 | 10.x | .NET 10 or later |
 
-`dotnet-ef-pack` and `EfMigrationPack.Tools` run on any installed .NET 6 or later runtime. Only building this
+`EfMigrationPack.Cli` and `EfMigrationPack.Tools` run on any installed .NET 6 or later runtime. Only building this
 repository from source needs the .NET 10 SDK.
 
 ## Getting started
@@ -71,7 +71,7 @@ If a pack is applied without it, EF stops with an error saying so, rather than r
 Command line, globally or as a local tool:
 
 ```
-dotnet tool install --global dotnet-ef-pack
+dotnet tool install --global EfMigrationPack.Cli
 ```
 
 Package Manager Console in Visual Studio:
@@ -83,24 +83,25 @@ Install-Package EfMigrationPack.Tools
 ### 4. Pack
 
 ```
-dotnet ef-pack pack --dry-run
-dotnet ef-pack pack
+dotnet ef-pack pack Sprint10 --dry-run
+dotnet ef-pack pack Sprint10
 ```
 
 or in the Package Manager Console:
 
 ```
-Pack-Migrations -WhatIf
-Pack-Migrations
+Pack-Migrations Sprint10 -WhatIf
+Pack-Migrations Sprint10
 ```
 
-Then build, [verify](#verify-a-pack-before-committing), and commit.
+Give each pack a name that says where it came from, such as the sprint or release it was made for, just as you
+name a migration. Then build, [verify](#verify-a-pack-before-committing), and commit.
 
 ## Commands
 
 | Command line | Package Manager Console | What it does |
 |---|---|---|
-| `dotnet ef-pack pack` | `Pack-Migrations` | Packs every migration not already packed into a new `PackedMigrationsNNNN` and moves the originals into `PackedMigrationsNNNN.zip`. |
+| `dotnet ef-pack pack <name>` | `Pack-Migrations <Name>` | Packs every migration not already packed into a new packed migration called `<name>`, and moves the originals into `<name>.zip`. |
 | `dotnet ef-pack unpack` | `Unpack-Migrations` | Restores the newest pack's original migrations from its zip and removes the pack. |
 
 | Option (CLI / PMC) | Applies to | |
@@ -108,7 +109,7 @@ Then build, [verify](#verify-a-pack-before-committing), and commit.
 | `--project` / `-Project` | both | Project folder or `.csproj`. The PMC defaults to the console's **Default project**; the CLI to the current folder. |
 | `--context` / `-Context` | both | The DbContext, when the project has migrations for more than one. |
 | `--dry-run` / `-DryRun` or `-WhatIf` | both | Show what would change without changing anything. |
-| `--single-file` / `-SingleFile` | pack | Put every original migration in the pack's main file instead of a `PackedMigrationsNNNN.Steps` folder. |
+| `--single-file` / `-SingleFile` | pack | Put every original migration in the pack's main file instead of a `<name>.Steps` folder. |
 | `--all` / `-All` | unpack | Unpack every pack, newest first. |
 | `--force` / `-Force` | unpack | Unpack even if the pack was edited after packing, or a restored file would overwrite a different one. |
 
@@ -121,8 +122,8 @@ The names from version 1.0 still work: `dotnet ef-pack compress` / `expand` and 
 Every migration in a pack is reported as it finishes, for example from `dotnet ef database update`:
 
 ```
-Applying migration '00000000000002_PackedMigrations0002'.
-Packed migration '00000000000002_PackedMigrations0002': 3 of 5 migration(s) to apply, 2 already applied.
+Applying migration '00261024111000_Sprint10'.
+Packed migration '00261024111000_Sprint10': 3 of 5 migration(s) to apply, 2 already applied.
 Applied packed migration '20260310091500_AddInvoices' (1/3).
 Applied packed migration '20260402140200_AddInvoiceLines' (2/3).
 Applied packed migration '20260415083000_IndexInvoiceDate' (3/3).
@@ -143,22 +144,28 @@ options.UseSqlServer(connectionString)
 
 ## How it works
 
-`pack` creates, next to your model snapshot:
+`pack Sprint10` creates, next to your model snapshot:
 
-- `0000000000NNNN_PackedMigrationsNNNN.cs`: `Up` lists every original migration in id order, `Down` lists them in
-  reverse.
-- `0000000000NNNN_PackedMigrationsNNNN.Designer.cs`: one target model, copied from the model snapshot.
-- `PackedMigrationsNNNN.Steps/`: each original migration as a nested class, its code unchanged except that `Up` and
-  `Down` become `public`.
-- `PackedMigrationsNNNN.zip`: the original `.cs` and `.Designer.cs` files, at their project-relative paths, with a
+- `00261024111000_Sprint10.cs`: `Up` lists every original migration in id order, `Down` lists them in reverse.
+- `00261024111000_Sprint10.Designer.cs`: one target model, copied from the model snapshot.
+- `Sprint10.Steps/`: each original migration as a nested class, its code unchanged except that `Up` and `Down`
+  become `public`.
+- `Sprint10.zip`: the original `.cs` and `.Designer.cs` files, at their project-relative paths, with a
   checksum manifest. The zip is written and verified before any original is removed.
 
 Earlier packs are never changed; each run makes a new one.
 
-**Why the ids look like `00000000000001_PackedMigrations0001`.** EF decides what to run purely by migration id,
-sorted as text. Pack ids are a sequence padded to look like timestamps, so packs sort in the order they were made
-and before every ordinary migration. A migration merged after a pack, even one with an older timestamp, sorts after
-the packs and goes into the next pack. An empty database then runs it in the same order existing databases did.
+**Why the ids look like `00261024111000_Sprint10`.** EF decides what to run purely by migration id, sorted as text,
+and never runs an id a database has already recorded. A pack's id is `00` followed by the UTC time it was made as
+`yyMMddHHmmss`, then its name. So:
+
+- packs sort in the order they were made, and **before every ordinary migration**, whose ids start with the full
+  year. A migration merged after a pack, even one with an older timestamp, sorts after the packs and goes into the
+  next pack, so an empty database runs it in the same order existing databases did;
+- an id **never repeats**, even if you unpack, change the migrations and pack again under the same name. A repeated
+  id would be skipped by every database that had applied the first pack, so new migrations in it would never run.
+
+Packs made by earlier versions, with ids like `00000000000001_PackedMigrations0001`, keep working and sort first.
 
 **Applying a pack.** For each original migration, the pack checks the history table. If the id is missing, it runs
 the migration and inserts that id; if it's present, it skips it. `Down` does the reverse. Every database therefore
@@ -175,13 +182,14 @@ Databases need nothing doing afterwards: the restored migrations are already rec
 
 ## Recommended workflow
 
-1. When you cut a release branch, run `dotnet ef-pack pack` on a clean working tree.
+1. When you cut a release branch, run `dotnet ef-pack pack <release or sprint name>` on a clean working tree.
 2. Verify (below), commit, and merge to main.
 3. Developers who sync main get one new pack instead of each feature's migrations. Feature branches keep their own
    migration files until they merge.
 
-Only pack on one branch at a time: two branches packing concurrently both create the same
-`PackedMigrationsNNNN`, and whichever merges second must unpack and pack again.
+Only pack on one branch at a time. Two branches that pack concurrently both pack the migrations they share, and
+once both are merged those migrations are in two packs; databases cope (the second pack skips what the first
+applied), but unpacking reports the duplicates. Whichever merges second should unpack and pack again.
 
 ## Verify a pack before committing
 

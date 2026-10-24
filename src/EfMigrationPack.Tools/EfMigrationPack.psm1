@@ -8,9 +8,12 @@ function Pack-Migrations {
         Packs every migration that is not already packed into a new packed migration.
 
     .DESCRIPTION
-        Creates PackedMigrationsNNNN (migration id 0000000000NNNN_PackedMigrationsNNNN), whose Up applies
-        each original migration that the database has not already recorded, and moves the original
-        migration files into PackedMigrationsNNNN.zip.
+        Creates a packed migration called Name (migration id 00yyMMddHHmmss_Name, so it sorts before
+        every ordinary migration and never repeats), whose Up applies each original migration that the
+        database has not already recorded, and moves the original migration files into Name.zip.
+
+    .PARAMETER Name
+        The pack's name, a valid C# class name that says where it came from, such as Sprint10.
 
     .PARAMETER Context
         The DbContext to pack migrations for. Required when the project has several.
@@ -19,20 +22,25 @@ function Pack-Migrations {
         The project to use. Defaults to the Package Manager Console's default project.
 
     .PARAMETER SingleFile
-        Put every step in the pack's main file instead of a PackedMigrationsNNNN.Steps folder.
+        Put every step in the pack's main file instead of a Name.Steps folder.
 
     .PARAMETER DryRun
         Show what would change without changing anything. -WhatIf does the same.
+
+    .EXAMPLE
+        Pack-Migrations Sprint10
     #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
+        [Parameter(Position = 0, Mandatory = $true)]
+        [string] $Name,
         [string] $Context,
         [string] $Project,
         [switch] $SingleFile,
         [switch] $DryRun
     )
 
-    $arguments = @('pack') + (Get-EfPackProjectArguments $Project)
+    $arguments = @('pack', $Name) + (Get-EfPackProjectArguments $Project)
     if ($Context) { $arguments += @('--context', $Context) }
     if ($SingleFile) { $arguments += '--single-file' }
     if ($DryRun -or $WhatIfPreference) { $arguments += '--dry-run' }
@@ -46,7 +54,7 @@ function Unpack-Migrations {
         Restores the newest packed migration's original migrations and removes the pack.
 
     .DESCRIPTION
-        Unzips PackedMigrationsNNNN.zip back to the original locations and deletes the packed
+        Unzips the pack's Name.zip back to the original locations and deletes the packed
         migration. Packs are unpacked newest first; -All unpacks every pack.
 
     .PARAMETER Context

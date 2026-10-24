@@ -1,16 +1,42 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace EfMigrationPack;
 
-/// <summary>Pack ids are a sequence padded like a timestamp, so every pack sorts before every real migration.</summary>
+/// <summary>
+/// A pack's id is "00" + the UTC time as yyMMddHHmmss, then its name: 00261024111000_Sprint10.
+/// The leading zeros make every pack sort before every ordinary migration (whose ids start with the full year),
+/// packs sort in the order they were made, and an id never repeats, even when a name is reused after unpacking.
+/// A repeated id would be fatal: databases that recorded it would never run the new pack.
+/// </summary>
 internal static class PackNames
 {
-    public const string Prefix = "PackedMigrations";
+    // Names that would hide a type the generated code refers to.
+    private static readonly string[] Reserved = { "Migration", "PackedMigration", "PackedStep", "PackedStepEntry", "ModelSnapshot", "MigrationBuilder" };
 
-    public static string ClassName(int sequence) => Prefix + sequence.ToString("D4", CultureInfo.InvariantCulture);
+    public static string Id(long number, string name) => number.ToString("D14", CultureInfo.InvariantCulture) + "_" + name;
 
-    public static string Id(int sequence) => sequence.ToString("D14", CultureInfo.InvariantCulture) + "_" + ClassName(sequence);
+    /// <summary>The current time as 00yyMMddHHmmss, or one more than the newest existing pack if that is later.</summary>
+    public static long Next(IEnumerable<long> existing, DateTime utcNow)
+    {
+        var candidate = long.Parse(utcNow.ToString("yyMMddHHmmss", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
+        var newest = existing.DefaultIfEmpty(0).Max();
+        return candidate > newest ? candidate : newest + 1;
+    }
+
+    public static void Validate(string name, string contextName)
+    {
+        if (!SyntaxFacts.IsValidIdentifier(name) || SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None)
+        {
+            throw new PackException($"'{name}' can't be used as a pack name: it must be a valid C# class name, such as Sprint10 or Release_2026_10.");
+        }
+
+        if (Reserved.Contains(name, StringComparer.Ordinal) || name == contextName)
+        {
+            throw new PackException($"'{name}' can't be used as a pack name: it would hide a type the migrations refer to.");
+        }
+    }
 }
 
 /// <summary>pack: packs every migration not already packed into a new pack and archives the originals.</summary>
@@ -58,9 +84,9 @@ internal static class Packer
             throw new PackException("These migrations are already packed; did a merge restore their original files? " + string.Join(", ", repacked));
         }
 
-        var sequence = set.Packs.Count == 0 ? 1 : set.Packs.Max(p => p.PackSequence) + 1;
-        var name = PackNames.ClassName(sequence);
-        var packId = PackNames.Id(sequence);
+        var name = o.Name!;
+        PackNames.Validate(name, set.ContextName);
+        var packId = PackNames.Id(PackNames.Next(set.Packs.Select(p => p.PackNumber), DateTime.UtcNow), name);
         if (string.CompareOrdinal(packId, set.Loose[0].Id) >= 0)
         {
             throw new PackException($"Migration {set.Loose[0].Id} does not sort after the new pack id {packId}.");
@@ -69,7 +95,14 @@ internal static class Packer
         var packKey = Code.Qualify(set.Namespace, name);
         if (classes.ContainsKey(packKey))
         {
-            throw new PackException($"A class named {packKey} already exists.");
+            throw new PackException($"A class named {packKey} already exists; choose another name for the pack.");
+        }
+
+        var sameName = classes.Values.Where(c => c.Id != null && c.Id.EndsWith("_" + name, StringComparison.Ordinal)).Select(c => c.Id!).ToList();
+        if (sameName.Count > 0)
+        {
+            // EF Core finds a migration by name for "database update <name>"; two with one name would be ambiguous.
+            throw new PackException($"Migration {sameName[0]} already uses the name {name}; choose another name for the pack.");
         }
 
         var (snapshotPart, buildModel) = set.SnapshotModel();

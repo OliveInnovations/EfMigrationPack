@@ -5,7 +5,7 @@
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/thepjo)
 
 Hundreds of migrations make a project slow to build, because every `.Designer.cs` file holds a full copy of your
-model. The `dotnet-ef-pack` tool folds them into one **packed migration** with a single target model and moves the
+model. The `dotnet ef-pack` command folds them into one **packed migration** with a single target model and moves the
 originals into a zip. This package is what makes a pack safe to apply:
 
 - each original migration in the pack runs only if the database hasn't recorded it, and is then recorded under its
@@ -40,8 +40,8 @@ services.AddDbContext<AppDbContext>(options => options
 ## Output when a pack is applied
 
 ```
-Applying migration '00000000000002_PackedMigrations0002'.
-Packed migration '00000000000002_PackedMigrations0002': 3 of 5 migration(s) to apply, 2 already applied.
+Applying migration '00261024111000_Sprint10'.
+Packed migration '00261024111000_Sprint10': 3 of 5 migration(s) to apply, 2 already applied.
 Applied packed migration '20260310091500_AddInvoices' (1/3).
 Applied packed migration '20260402140200_AddInvoiceLines' (2/3).
 Applied packed migration '20260415083000_IndexInvoiceDate' (3/3).
@@ -53,7 +53,7 @@ and your application's logs. To also write them straight to the console:
 
 ## Creating packs
 
-Use the [`dotnet-ef-pack`](https://www.nuget.org/packages/dotnet-ef-pack) command-line tool or the
+Use the [`EfMigrationPack.Cli`](https://www.nuget.org/packages/EfMigrationPack.Cli) command-line tool or the
 [`EfMigrationPack.Tools`](https://www.nuget.org/packages/EfMigrationPack.Tools) Package Manager Console commands.
 
 Full documentation, the recommended workflow and limitations:

@@ -1,4 +1,4 @@
-# dotnet-ef-pack
+# EfMigrationPack.Cli
 
 **Pack hundreds of EF Core migrations into one, from the command line.** Used like `dotnet ef`.
 
@@ -14,8 +14,10 @@ project. Works with EF Core 6 and later; runs on any .NET 6 or later runtime.
 ## Install
 
 ```
-dotnet tool install --global dotnet-ef-pack
+dotnet tool install --global EfMigrationPack.Cli
 ```
+
+The package is EfMigrationPack.Cli; the command it installs is `dotnet ef-pack`.
 
 Your migrations project also needs the [`EfMigrationPack`](https://www.nuget.org/packages/EfMigrationPack) runtime
 package (the major version matching your EF Core major), with `UsePackedMigrations()` on the DbContext options.
@@ -23,13 +25,14 @@ package (the major version matching your EF Core major), with `UsePackedMigratio
 ## Use
 
 ```
-dotnet ef-pack pack --dry-run   # show what would change
-dotnet ef-pack pack             # create PackedMigrationsNNNN and PackedMigrationsNNNN.zip
-dotnet ef-pack unpack           # restore the newest pack's original migrations
+dotnet ef-pack pack Sprint10 --dry-run   # show what would change
+dotnet ef-pack pack Sprint10             # create the pack Sprint10 and Sprint10.zip
+dotnet ef-pack unpack                    # restore the newest pack's original migrations
 ```
 
 | Option | |
 |---|---|
+| `<name>` | pack: the pack's name, such as the sprint or release it's for. Its migration id is `00yyMMddHHmmss_<name>`, so it never repeats. |
 | `--project <folder or .csproj>` | Project to work on (default: current folder). |
 | `--context <DbContext>` | Needed when the project has migrations for more than one context. |
 | `--dry-run` | Show what would change without changing anything. |

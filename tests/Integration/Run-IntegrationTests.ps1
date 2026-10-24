@@ -16,6 +16,8 @@
       8. applies the migrations to a new database, and to the part-way database from step 3
       9. unpacks with "dotnet ef-pack unpack" and checks the files are restored byte for byte
      10. applies the migrations again and checks nothing new is applied
+     11. adds a third migration and packs again under the same name, which must give a new pack id
+     12. applies that pack to the database from step 8, which must run only the third migration
 
     Needs the .NET runtime each EF Core major targets: .NET 6 for EF Core 6 and 7, .NET 8 for 8 and 9,
     .NET 10 for 10.
@@ -46,7 +48,8 @@ $env:DOTNET_NOLOGO = '1'
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 
 $targetFrameworks = @{ 6 = 'net6.0'; 7 = 'net6.0'; 8 = 'net8.0'; 9 = 'net8.0'; 10 = 'net10.0' }
-$packId = '00000000000001_PackedMigrations0001'
+$packName = 'Sprint1'
+$script:packId = $null # set once a pack exists; its id includes the time it was made
 
 # ------------------------------------------------------------------ helpers
 
@@ -122,7 +125,7 @@ function Get-ComparableStatements([string] $Path) {
     $text = (Get-Content $Path -Raw).Replace("`r`n", "`n")
     return @($text -split ';\s*\n' |
         ForEach-Object { $_.Trim().TrimEnd(';').Trim() } |
-        Where-Object { $_ -and $_ -notmatch '^(BEGIN TRANSACTION|COMMIT)$' -and $_ -notlike "*'$packId'*" })
+        Where-Object { $_ -and $_ -notmatch '^(BEGIN TRANSACTION|COMMIT)$' -and $_ -notlike "*'$($script:packId)'*" })
 }
 
 function Assert-True([bool] $Condition, [string] $Message) {
@@ -141,13 +144,29 @@ function Get-Columns($Dump, [string] $Table) {
     return (@($property.Value) -join ',')
 }
 
-function Assert-Database($Dump, [string[]] $ExpectedHistory, [string] $What) {
+function Assert-Database($Dump, [string[]] $ExpectedHistory, [string] $What, [string] $ExpectedWidgets = 'Id,Name,Description') {
     $history = @($Dump.history) -join ', '
     Assert-True ($history -eq ($ExpectedHistory -join ', ')) "$What history is [$history], expected [$($ExpectedHistory -join ', ')]."
     $widgets = Get-Columns $Dump 'Widgets'
     $categories = Get-Columns $Dump 'Categories'
-    Assert-True ($widgets -eq 'Id,Name,Description') "$What Widgets columns are [$widgets], expected [Id,Name,Description]."
+    Assert-True ($widgets -eq $ExpectedWidgets) "$What Widgets columns are [$widgets], expected [$ExpectedWidgets]."
     Assert-True ($categories -eq 'Id,Title') "$What Categories columns are [$categories], expected [Id,Title]."
+}
+
+# Runs Pack-Migrations from the Package Manager Console module and returns the new pack's migration id.
+function Invoke-PackMigrations([string] $Name) {
+    Push-Location $script:appDir
+    try { $output = (Pack-Migrations $Name *>&1 | ForEach-Object { "$_" }) -join "`n" }
+    finally { Pop-Location }
+    Add-Content -Path $script:log -Value "> Pack-Migrations $Name`n$output"
+    $script:lastOutput = "> Pack-Migrations $Name`n$output"
+    Assert-True ($output -notmatch '(?m)^warning:') 'Pack-Migrations printed no warnings.'
+
+    $files = @(Get-ChildItem (Join-Path $script:appDir 'Migrations') -Filter "*_$Name.cs" | Where-Object { $_.Name -notlike '*.Designer.cs' })
+    Assert-True ($files.Count -eq 1) "Pack-Migrations created one pack called $Name."
+    $id = $files[0].BaseName
+    Assert-True ($id -match "^00\d{12}_$Name`$") "the pack id $id is 00yyMMddHHmmss_$Name."
+    return $id
 }
 
 function Test-RuntimeInstalled([string] $TargetFramework) {
@@ -163,7 +182,7 @@ function Test-EfMajor([int] $EfMajor) {
     if (-not (Test-RuntimeInstalled $tfm)) { throw "The .NET $($tfm.Substring(3)) runtime is needed for EF Core $EfMajor and isn't installed." }
 
     $packVersion = Find-PackageVersion 'EfMigrationPack' "$EfMajor"
-    $cliVersion = Find-PackageVersion 'dotnet-ef-pack'
+    $cliVersion = Find-PackageVersion 'EfMigrationPack.Cli'
     $toolsVersion = Find-PackageVersion 'EfMigrationPack.Tools'
 
     $work = Join-Path $repoRoot "artifacts/integration/ef$EfMajor"
@@ -204,7 +223,6 @@ function Test-EfMajor([int] $EfMajor) {
   <packageSourceMapping>
     <packageSource key="local">
       <package pattern="EfMigrationPack*" />
-      <package pattern="dotnet-ef-pack" />
     </packageSource>
     <packageSource key="nuget.org">
       <package pattern="*" />
@@ -227,14 +245,14 @@ function Test-EfMajor([int] $EfMajor) {
         try {
             Invoke-Logged 'dotnet' @('new', 'tool-manifest') | Out-Null
             Invoke-Logged 'dotnet' @('tool', 'install', 'dotnet-ef', '--version', $efVersion) | Out-Null
-            Invoke-Logged 'dotnet' @('tool', 'install', 'dotnet-ef-pack', '--version', $cliVersion) | Out-Null
+            Invoke-Logged 'dotnet' @('tool', 'install', 'EfMigrationPack.Cli', '--version', $cliVersion) | Out-Null
         }
         finally { Pop-Location }
 
         $toolsDir = Join-Path $work 'EfMigrationPack.Tools'
         [IO.Compression.ZipFile]::ExtractToDirectory((Join-Path $PackagesDir "EfMigrationPack.Tools.$toolsVersion.nupkg"), $toolsDir)
         Import-Module (Join-Path $toolsDir 'tools/EfMigrationPack.psm1') -Force -DisableNameChecking
-        Write-Host "    EF Core $efVersion ($tfm), EfMigrationPack $packVersion, dotnet-ef-pack $cliVersion, EfMigrationPack.Tools $toolsVersion"
+        Write-Host "    EF Core $efVersion ($tfm), EfMigrationPack $packVersion, EfMigrationPack.Cli $cliVersion, EfMigrationPack.Tools $toolsVersion"
 
         $migrations = Join-Path $script:appDir 'Migrations'
 
@@ -272,22 +290,16 @@ function Test-EfMajor([int] $EfMajor) {
 
         $step = '5. dotnet ef-pack pack --dry-run changes nothing'
         Write-Host "  $step"
-        Invoke-EfPack @('pack', '--dry-run') | Out-Null
+        Invoke-EfPack @('pack', $packName, '--dry-run') | Out-Null
         Assert-True ((Get-TreeFingerprint $migrations) -eq $before) 'the dry run left the migrations folder unchanged.'
 
         $step = '6. Pack-Migrations'
         Write-Host "  $step"
-        Push-Location $script:appDir
-        try {
-            $output = (Pack-Migrations *>&1 | ForEach-Object { "$_" }) -join "`n"
-        }
-        finally { Pop-Location }
-        Add-Content -Path $script:log -Value "> Pack-Migrations`n$output"
-        $script:lastOutput = "> Pack-Migrations`n$output"
-        Assert-True ($output -notmatch '(?m)^warning:') 'Pack-Migrations printed no warnings.'
+        $packId = Invoke-PackMigrations $packName
+        $script:packId = $packId
 
-        foreach ($expected in @("$packId.cs", "$packId.Designer.cs", 'PackedMigrations0001.zip',
-                "PackedMigrations0001.Steps/$initialId.cs", "PackedMigrations0001.Steps/$secondId.cs")) {
+        foreach ($expected in @("$packId.cs", "$packId.Designer.cs", "$packName.zip",
+                "$packName.Steps/$initialId.cs", "$packName.Steps/$secondId.cs")) {
             Assert-True (Test-Path (Join-Path $migrations $expected)) "Pack-Migrations created Migrations/$expected."
         }
 
@@ -344,6 +356,29 @@ function Test-EfMajor([int] $EfMajor) {
         $finalDump = Get-Dump $freshDb
         Assert-True ((@($finalDump.history) -join ',') -eq (@($freshDump.history) -join ',')) 'no history rows were added.'
         Assert-Database $finalDump @($packId, $initialId, $secondId) 'The database'
+
+        $step = '11. Add a migration and pack again under the same name'
+        Write-Host "  $step"
+        Start-Sleep -Seconds 1
+        Copy-Item (Join-Path $script:appDir 'stages/Model.v3.cs.txt') (Join-Path $script:appDir 'Model.cs') -Force
+        Invoke-Ef $absentDb @('migrations', 'add', 'AddQuantity') | Out-Null
+        $files = @(Get-ChildItem $migrations -Filter '*_AddQuantity.cs' | Where-Object { $_.Name -notlike '*.Designer.cs' })
+        Assert-True ($files.Count -eq 1) 'the AddQuantity migration file was created.'
+        $thirdId = $files[0].BaseName
+
+        $secondPackId = Invoke-PackMigrations $packName
+        $script:packId = $secondPackId
+        Assert-True ($secondPackId -ne $packId) "packing again under the same name gave a new id ($packId, then $secondPackId)."
+        Assert-True ([string]::CompareOrdinal($packId, $secondPackId) -lt 0) "$secondPackId sorts after $packId."
+        Assert-True ([string]::CompareOrdinal($secondPackId, $initialId) -lt 0) "$secondPackId sorts before every ordinary migration."
+        Assert-True (Test-Path (Join-Path $migrations "$packName.Steps/$thirdId.cs")) "the new pack contains $thirdId."
+
+        $step = '12. Apply the new pack to the database that applied the first'
+        Write-Host "  $step"
+        $output = Invoke-Ef $freshDb @('database', 'update')
+        Assert-Matches $output "1 of 3 migration\(s\) to apply, 2 already applied" 'the new pack to report 1 of 3 migrations to apply'
+        Assert-Matches $output ([regex]::Escape("Applied packed migration '$thirdId' (1/1)")) "$thirdId to be reported as applied"
+        Assert-Database (Get-Dump $freshDb) @($packId, $secondPackId, $initialId, $secondId, $thirdId) 'The database' 'Id,Name,Description,Quantity'
     }
     catch {
         $message = "${step}: $($_.Exception.Message)"

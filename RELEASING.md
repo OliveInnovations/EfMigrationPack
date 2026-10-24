@@ -7,7 +7,7 @@ Every release has a release number `minor.patch` (for example `1.0`). It becomes
 | Package | Version for release `1.0` |
 |---|---|
 | `EfMigrationPack` for EF Core 6 / 7 / 8 / 9 / 10 | `6.1.0` / `7.1.0` / `8.1.0` / `9.1.0` / `10.1.0` |
-| `dotnet-ef-pack` | `1.1.0` |
+| `EfMigrationPack.Cli` | `1.1.0` |
 | `EfMigrationPack.Tools` | `1.1.0` |
 
 The runtime package's major always matches the EF Core major it is built against, and each build only accepts
@@ -28,7 +28,7 @@ belongs to whichever account or organization the push key was issued for.
    - Repository owner and repository: the GitHub owner and repository name of this repo
    - Workflow file: `release.yml`
    - Environment: `production` (the workflow's job runs in that GitHub environment)
-   - Packages: `EfMigrationPack*` and `dotnet-ef-pack` (the CLI's ID doesn't share the prefix)
+   - Packages: `EfMigrationPack*`
 
    This lets the `Release` workflow obtain a one-hour push key for packages owned by the organization, so no
    long-lived API key is stored in GitHub. For a private repository the policy is provisional until the first
@@ -37,7 +37,9 @@ belongs to whichever account or organization the push key was issued for.
    email). It must be a member of the organization.
 4. **Optional: reserve the ID prefix.** Ask nuget.org (account@nuget.org) to reserve `EfMigrationPack` for the
    organization. Reserved packages get a verified tick, and nobody else can publish `EfMigrationPack.*` IDs.
-   `dotnet-ef-pack` doesn't share the prefix, so it is protected only by being registered first.
+
+The command-line tool's package is `EfMigrationPack.Cli`, but the command it installs is `dotnet ef-pack`
+(`ToolCommandName` in its project file). The package ID `dotnet-ef-pack` was refused by nuget.org with a 409.
 
 ## Publishing a release
 

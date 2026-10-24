@@ -1,0 +1,45 @@
+using Microsoft.EntityFrameworkCore;
+
+namespace TestApp
+{
+    // Stage 3 of the test model: adds a nullable Quantity column to Widgets. Used after unpacking, to check that
+    // packing again under the same name gives a new pack id, so databases that applied the first pack still run it.
+
+    public class Widget
+    {
+        public int Id { get; set; }
+
+        public string Name { get; set; } = "";
+
+        public string? Description { get; set; }
+
+        public int? Quantity { get; set; }
+    }
+
+    public class Category
+    {
+        public int Id { get; set; }
+
+        public string Title { get; set; } = "";
+    }
+
+    public static class TestModel
+    {
+        public static void Configure(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Widget>(widget =>
+            {
+                widget.ToTable("Widgets");
+                widget.Property(w => w.Name).IsRequired().HasMaxLength(100);
+                widget.Property(w => w.Description).HasMaxLength(500);
+            });
+
+            modelBuilder.Entity<Category>(category =>
+            {
+                category.ToTable("Categories");
+                category.Property(c => c.Title).IsRequired().HasMaxLength(100);
+                category.HasIndex(c => c.Title).IsUnique();
+            });
+        }
+    }
+}

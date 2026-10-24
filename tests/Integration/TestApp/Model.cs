@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 namespace TestApp
 {
     // Stage 1 of the test model: one table. Run-IntegrationTests.ps1 replaces this file with
-    // stages/Model.v2.cs.txt before adding the second migration.
+    // stages/Model.v2.cs.txt and later stages/Model.v3.cs.txt before adding each further migration.
 
     public class Widget
     {

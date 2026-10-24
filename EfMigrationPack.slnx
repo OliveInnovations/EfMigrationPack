@@ -14,7 +14,7 @@
   </Folder>
   <Folder Name="/docs/nuget/">
     <File Path="docs/nuget/EfMigrationPack.md" />
-    <File Path="docs/nuget/dotnet-ef-pack.md" />
+    <File Path="docs/nuget/EfMigrationPack.Cli.md" />
     <File Path="docs/nuget/EfMigrationPack.Tools.md" />
   </Folder>
   <Folder Name="/tests/Integration/">

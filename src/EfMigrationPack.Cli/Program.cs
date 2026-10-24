@@ -4,13 +4,14 @@ internal static class Program
 {
     private const string Usage =
 @"usage:
-  dotnet ef-pack pack   [--project <folder|.csproj>] [--context <DbContext>] [--single-file] [--dry-run]
-  dotnet ef-pack unpack [--project <folder|.csproj>] [--context <DbContext>] [--all] [--force] [--dry-run]
+  dotnet ef-pack pack <name> [--project <folder|.csproj>] [--context <DbContext>] [--single-file] [--dry-run]
+  dotnet ef-pack unpack      [--project <folder|.csproj>] [--context <DbContext>] [--all] [--force] [--dry-run]
 
-  pack       Packs every migration that is not already packed into a new packed migration
-             (PackedMigrationsNNNN) and moves the original files into PackedMigrationsNNNN.zip.
-  unpack     Restores the newest pack's original migrations from its zip and removes the pack.
-             --all unpacks every pack, newest first.
+  pack <name>  Packs every migration that is not already packed into a new packed migration called <name>
+               (for example Sprint10, with id 00yyMMddHHmmss_Sprint10) and moves the original files into
+               <name>.zip.
+  unpack       Restores the newest pack's original migrations from its zip and removes the pack.
+               --all unpacks every pack, newest first.
 
   --project      Project folder or .csproj (default: current folder).
   --context      DbContext name; required when the project has migrations for several contexts.
@@ -86,6 +87,9 @@ internal sealed class Options
 
     public bool Force { get; private set; }
 
+    /// <summary>pack: the pack's class name.</summary>
+    public string? Name { get; private set; }
+
     public static Options Parse(Command command, IReadOnlyList<string> args)
     {
         var o = new Options();
@@ -114,9 +118,20 @@ internal sealed class Options
                 case "--force" when command == Command.Unpack:
                     o.Force = true;
                     break;
+                case "--name" when command == Command.Pack:
+                    o.Name = Next();
+                    break;
+                case var name when command == Command.Pack && o.Name == null && !name.StartsWith("-", StringComparison.Ordinal):
+                    o.Name = name;
+                    break;
                 default:
                     throw new ArgumentException($"Unknown argument '{arg}' for {command.ToString().ToLowerInvariant()}.");
             }
+        }
+
+        if (command == Command.Pack && string.IsNullOrWhiteSpace(o.Name))
+        {
+            throw new ArgumentException("pack needs a name for the new pack, for example: dotnet ef-pack pack Sprint10");
         }
 
         o.ProjectDir = Path.GetFullPath(o.ProjectDir);
