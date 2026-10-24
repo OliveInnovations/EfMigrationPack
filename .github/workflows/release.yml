@@ -107,10 +107,14 @@ jobs:
           }
 
       # Creates the v<release> tag on this commit if it doesn't exist (manual runs), and the GitHub release.
+      # Uses the GitHub CLI that's preinstalled on the runner, rather than a third-party action.
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.version.outputs.release }}
-          target_commitish: ${{ github.sha }}
-          files: artifacts/packages/*
-          generate_release_notes: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.version.outputs.release }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" artifacts/packages/* --clobber
+          else
+            gh release create "$TAG" artifacts/packages/* --target "$GITHUB_SHA" --title "$TAG" --generate-notes
+          fi

@@ -169,6 +169,22 @@ function Invoke-PackMigrations([string] $Name) {
     return $id
 }
 
+# Replaces Model.cs with a later stage. The copy is stamped with the current time: a copy keeps the source's older
+# timestamp, and MSBuild would then treat Model.cs as unchanged and keep compiling the previous model.
+function Set-ModelStage([string] $Stage) {
+    $target = Join-Path $script:appDir 'Model.cs'
+    Copy-Item (Join-Path $script:appDir "stages/Model.$Stage.cs.txt") $target -Force
+    (Get-Item $target).LastWriteTime = Get-Date
+}
+
+# Checks a scaffolded migration contains what the model change should produce, so a stale build fails here clearly.
+function Assert-MigrationContains([string] $Id, [string[]] $Expected) {
+    $text = Get-Content (Join-Path $script:appDir "Migrations/$Id.cs") -Raw
+    foreach ($fragment in $Expected) {
+        Assert-True ($text.Contains($fragment)) "migration $Id contains '$fragment'."
+    }
+}
+
 function Test-RuntimeInstalled([string] $TargetFramework) {
     $major = $TargetFramework.Substring(3).Split('.')[0]
     return [bool]((& dotnet --list-runtimes) -match "^Microsoft\.NETCore\.App $major\.")
@@ -266,11 +282,12 @@ function Test-EfMajor([int] $EfMajor) {
         $step = '2. Change the model and add a second migration'
         Write-Host "  $step"
         Start-Sleep -Seconds 1 # migration ids are timestamps to the second
-        Copy-Item (Join-Path $script:appDir 'stages/Model.v2.cs.txt') (Join-Path $script:appDir 'Model.cs') -Force
+        Set-ModelStage 'v2'
         Invoke-Ef $absentDb @('migrations', 'add', 'AddCategories') | Out-Null
         $files = @(Get-ChildItem $migrations -Filter '*_AddCategories.cs' | Where-Object { $_.Name -notlike '*.Designer.cs' })
         Assert-True ($files.Count -eq 1) 'the AddCategories migration file was created.'
         $secondId = $files[0].BaseName
+        Assert-MigrationContains $secondId @('"Description"', '"Categories"')
         Assert-True ([string]::CompareOrdinal($initialId, $secondId) -lt 0) "$initialId sorts before $secondId."
 
         $step = '3. Apply only Initial to the part-way database'
@@ -360,13 +377,16 @@ function Test-EfMajor([int] $EfMajor) {
         $step = '11. Add a migration and pack again under the same name'
         Write-Host "  $step"
         Start-Sleep -Seconds 1
-        Copy-Item (Join-Path $script:appDir 'stages/Model.v3.cs.txt') (Join-Path $script:appDir 'Model.cs') -Force
+        Set-ModelStage 'v3'
         Invoke-Ef $absentDb @('migrations', 'add', 'AddQuantity') | Out-Null
         $files = @(Get-ChildItem $migrations -Filter '*_AddQuantity.cs' | Where-Object { $_.Name -notlike '*.Designer.cs' })
         Assert-True ($files.Count -eq 1) 'the AddQuantity migration file was created.'
         $thirdId = $files[0].BaseName
+        Assert-MigrationContains $thirdId @('"Quantity"')
+        $snapshotHash = (Get-FileHash $snapshotFile -Algorithm SHA256).Hash
 
         $secondPackId = Invoke-PackMigrations $packName
+        Assert-True ((Get-FileHash $snapshotFile -Algorithm SHA256).Hash -eq $snapshotHash) 'the second pack left the model snapshot unchanged.'
         $script:packId = $secondPackId
         Assert-True ($secondPackId -ne $packId) "packing again under the same name gave a new id ($packId, then $secondPackId)."
         Assert-True ([string]::CompareOrdinal($packId, $secondPackId) -lt 0) "$secondPackId sorts after $packId."
