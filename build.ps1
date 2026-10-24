@@ -12,7 +12,7 @@
     Defaults to the value in Directory.Build.props.
 
 .PARAMETER Release
-    Build release versions. Without it, versions end in -dev.
+    Build release versions. Without it, versions end in -dev.<timestamp>.
 
 .PARAMETER EfMajors
     EF Core majors to build the runtime for.
@@ -33,7 +33,14 @@ function Invoke-Dotnet {
 
 $common = @('-c', 'Release')
 if ($PackRelease) { $common += "-p:PackRelease=$PackRelease" }
-if ($Release) { $common += '-p:IsRelease=true' }
+if ($Release) {
+    $common += '-p:IsRelease=true'
+}
+else {
+    # A unique -dev suffix per build, shared by every package, so NuGet's package cache never serves a stale
+    # copy of an earlier build with the same version.
+    $common += "-p:VersionSuffix=dev.$((Get-Date).ToUniversalTime().ToString('yyyyMMddHHmmss'))"
+}
 
 if (Test-Path artifacts) { Remove-Item artifacts -Recurse -Force }
 

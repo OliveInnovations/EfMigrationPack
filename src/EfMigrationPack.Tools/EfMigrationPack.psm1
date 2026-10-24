@@ -83,27 +83,49 @@ function Unpack-Migrations {
 }
 
 function Get-EfPackProjectArguments([string] $ProjectName) {
-    # The tool reads files from disk, so save open editors first (Package Manager Console only).
-    if (Get-Variable -Name DTE -Scope Global -ErrorAction SilentlyContinue) {
-        try { $global:DTE.ExecuteCommand('File.SaveAll') } catch { }
-    }
+    # Files are read from disk, so unsaved edits in open editors aren't seen; like EF Core's own commands,
+    # this doesn't save them for you. (Saving through $DTE.ExecuteCommand('File.SaveAll') was removed:
+    # when that fails, Visual Studio reports it in a modal "Value does not fall within the expected range" dialog.)
 
     if (Get-Command Get-Project -ErrorAction SilentlyContinue) {
-        $dteProject = if ($ProjectName) { Get-Project -Name $ProjectName } else { Get-Project }
-        if (-not $dteProject) {
-            throw "Project '$ProjectName' was not found. Select a default project or pass -Project."
+        try {
+            $dteProject = if ($ProjectName) { Get-Project -Name $ProjectName -ErrorAction Stop } else { Get-Project -ErrorAction Stop }
+        }
+        catch {
+            throw "Couldn't get project '$ProjectName' from Visual Studio: $($_.Exception.Message). Select the migrations project as the Default project, or pass -Project."
         }
 
-        return @('--project', $dteProject.FullName)
+        if (-not $dteProject) {
+            throw "No project selected. Select the migrations project as the Package Manager Console's Default project, or pass -Project."
+        }
+
+        return @('--project', (Get-EfPackProjectDirectory $dteProject))
     }
 
-    # Plain PowerShell (outside Visual Studio): a path, or the current folder.
+    # Plain PowerShell (outside Visual Studio): a folder or .csproj path, or the current folder.
     if ($ProjectName) { return @('--project', $ProjectName) }
     return @('--project', (Get-Location).Path)
 }
 
+function Get-EfPackProjectDirectory($dteProject) {
+    # The same property EF Core's own commands read; the project file path is the fallback.
+    try {
+        $fullPath = $dteProject.Properties.Item('FullPath').Value
+        if ($fullPath) { return $fullPath.TrimEnd('\', '/') }
+    }
+    catch { }
+
+    try {
+        $fullName = $dteProject.FullName
+        if ($fullName) { return $fullName }
+    }
+    catch { }
+
+    throw "Couldn't find the folder of project '$($dteProject.Name)'. Pass -Project with the project's folder or .csproj path."
+}
+
 function Invoke-EfPack([string[]] $Arguments) {
-    $dll = Join-Path $PSScriptRoot 'bin\EfMigrationPack.Cli.dll'
+    $dll = Join-Path (Join-Path $PSScriptRoot 'bin') 'EfMigrationPack.Cli.dll'
     if (-not (Test-Path $dll)) {
         throw "ef-pack binaries were not found at $dll."
     }

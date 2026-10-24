@@ -26,8 +26,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # .NET 6 and 8 runtimes are for the integration test's net6.0 and net8.0 test apps.
       - uses: actions/setup-dotnet@v5
         with:
+          dotnet-version: |
+            6.0.x
+            8.0.x
           global-json-file: global.json
 
       - name: Work out the release number
@@ -54,6 +58,11 @@ jobs:
       - name: Build all packages
         shell: pwsh
         run: ./build.ps1 -PackRelease '${{ steps.version.outputs.release }}' -Release
+
+      # The exact packages about to be published, against every EF Core major. Nothing is pushed if this fails.
+      - name: Integration test
+        shell: pwsh
+        run: ./tests/Integration/Run-IntegrationTests.ps1
 
       # Trusted publishing: exchanges this workflow's GitHub identity for a one-hour nuget.org key,
       # so no long-lived API key is stored. Requires a trusted publishing policy on nuget.org (RELEASING.md).

@@ -220,10 +220,16 @@ Bugs and ideas: [GitHub issues](https://github.com/OliveInnovations/EfMigrationP
 ## Building from source
 
 ```powershell
-./build.ps1        # every package, into artifacts/packages
+./build.ps1                                   # every package, into artifacts/packages
+./tests/Integration/Run-IntegrationTests.ps1  # end-to-end test against SQLite, for each EF Core major
 ```
 
-Needs the .NET 10 SDK. Release numbering and publishing are described in
+Needs the .NET 10 SDK. The integration test also needs the .NET 6 and 8 runtimes, for EF Core 6–9; pass
+`-EfMajors 8` (for example) to test one version. It adds two migrations to a test project, packs them, checks the
+generated SQL is unchanged, applies the pack to an empty and a part-way database, unpacks, and checks nothing is
+applied twice. CI runs it for every EF Core major on Linux and Windows, and every release runs it before publishing.
+
+Release numbering and publishing are described in
 [RELEASING.md](https://github.com/OliveInnovations/EfMigrationPack/blob/main/RELEASING.md).
 
 ## License

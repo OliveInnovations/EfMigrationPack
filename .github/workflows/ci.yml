@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,3 +24,42 @@ jobs:
         with:
           name: packages
           path: artifacts/packages
+
+  # End-to-end test against SQLite (tests/Integration/Run-IntegrationTests.ps1), per EF Core major and OS.
+  integration:
+    name: integration (EF Core ${{ matrix.ef }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        ef: [6, 7, 8, 9, 10]
+    steps:
+      - uses: actions/checkout@v5
+
+      # The test app targets net6.0 (EF Core 6, 7), net8.0 (8, 9) or net10.0 (10), so it needs those runtimes.
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            6.0.x
+            8.0.x
+          global-json-file: global.json
+
+      - name: Build packages for EF Core ${{ matrix.ef }}
+        shell: pwsh
+        run: ./build.ps1 -EfMajors ${{ matrix.ef }}
+
+      - name: Run the integration test
+        shell: pwsh
+        run: ./tests/Integration/Run-IntegrationTests.ps1 -EfMajors ${{ matrix.ef }}
+
+      - name: Upload logs, scripts and databases
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: integration-ef${{ matrix.ef }}-${{ matrix.os }}
+          path: |
+            artifacts/integration/**/test.log
+            artifacts/integration/**/*.sql
+            artifacts/integration/**/databases/*.db
+            artifacts/integration/**/TestApp/Migrations/**
