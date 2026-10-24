@@ -18,6 +18,27 @@ its original files at any time.
 
 Works with EF Core 6, 7, 8, 9 and 10, on any relational provider.
 
+## Why not just squash the migrations?
+
+When an EF Core project accumulates hundreds of migrations, the usual advice is to squash or reset them: delete
+them all and scaffold one fresh `InitialCreate`. That makes the build fast, but it only works if every database is
+already at the latest migration, and each one still needs its `__EFMigrationsHistory` table rewritten by hand.
+
+| | Builds fast | Databases part-way through still update | Existing databases need manual fixes | Reversible |
+|---|---|---|---|---|
+| Keep every migration | No | Yes | No | n/a |
+| Squash / reset to a new `InitialCreate` | Yes | **No**: the new migration tries to create tables that exist | **Yes**: rewrite each history table | Only from source control |
+| Hand-delete old `BuildTargetModel` bodies | Mostly | Yes | No | Only from source control |
+| **EfMigrationPack** | Yes | **Yes**: each runs exactly the migrations it's missing | **No** | **Yes**: `unpack` |
+
+Hand-deleting the target models from old `.Designer.cs` files removes most of the build time too, but it means
+editing generated code, and EF Core still uses those models for some SQL generation, such as SQLite table rebuilds.
+
+**When a plain squash is the better choice:** if you have only a few dozen migrations, or every database you care
+about is already at the latest migration and you're happy to reset their history, a squash is simpler and needs no
+extra package. EfMigrationPack is for teams with many developer, test and customer databases at different points in
+the history, where a squash would break them.
+
 ## Packages
 
 | Package | What it is |
@@ -217,6 +238,44 @@ applied), but unpacking reports the duplicates. Whichever merges second should u
 - The tools warn about migrations that use `Migration.TargetModel`, `UpOperations` or `DownOperations`, refer to
   their own class name, have no `Down`, or have `#if`/`#region` blocks spanning members.
 
+## FAQ
+
+**Why is my EF Core project slow to build with lots of migrations?**
+Each migration's `.Designer.cs` file contains `BuildTargetModel`, a complete copy of your model as it was when the
+migration was created. With hundreds of migrations you compile hundreds of copies of an ever-growing model. A pack
+keeps one.
+
+**How do I squash EF Core migrations without breaking existing databases?**
+Pack them: `dotnet ef-pack pack <name>`. The pack replaces the migrations in the build, but each database still
+applies exactly the original migrations it hasn't recorded, so nothing needs fixing by hand. See
+[Why not just squash?](#why-not-just-squash-the-migrations)
+
+**What happens to a database that's part-way through the packed migrations?**
+It applies only the ones it's missing, and records each under its original id.
+
+**Does packing change the SQL my migrations run?**
+No. Each migration's `Up` and `Down` code is kept as it was. Compare `dotnet ef migrations script` before and after to
+confirm: only the history inserts and transaction grouping differ. See [Limitations](#limitations) for the one
+target model a pack uses.
+
+**Can I undo a pack?**
+Yes: `dotnet ef-pack unpack` (or `Unpack-Migrations`) restores the original files byte for byte. Databases need no
+changes.
+
+**Can I keep adding migrations after packing?**
+Yes. New migrations are ordinary migrations; the next pack picks them up.
+
+**Which databases does it work with?**
+Any relational EF Core provider: SQL Server, PostgreSQL, MySQL, SQLite, Oracle and others. It uses only EF Core's
+own migration and history-table APIs. Every release is tested end to end against SQLite on EF Core 6 to 10.
+
+**Does it work with `Migrate()`, `dotnet ef database update` and migration bundles?**
+Yes, all three. For SQL scripts, read the first item under [Limitations](#limitations).
+
+**Which EF Core and .NET versions are supported?**
+EF Core 6 to 10, on the .NET version each requires. Use the `EfMigrationPack` version whose major matches your
+EF Core major.
+
 ## Support
 
 If EfMigrationPack saves you build time, you can [buy me a coffee](https://www.buymeacoffee.com/thepjo). Thank you!
@@ -233,9 +292,9 @@ Bugs and ideas: [GitHub issues](https://github.com/OliveInnovations/EfMigrationP
 ```
 
 Needs the .NET 10 SDK. The integration test also needs the .NET 6 and 8 runtimes, for EF Core 6–9; pass
-`-EfMajors 8` (for example) to test one version. It adds two migrations to a test project, packs them, checks the
-generated SQL is unchanged, applies the pack to an empty and a part-way database, unpacks, and checks nothing is
-applied twice. CI runs it for every EF Core major on Linux and Windows, and every release runs it before publishing.
+`-EfMajors 8` (for example) to test one version. It adds migrations to a test project, packs them, checks the
+generated SQL is unchanged, applies the pack to an empty and a part-way database, unpacks, packs again after adding
+another migration, and checks nothing is applied twice and nothing is missed. CI runs it for every EF Core major on Linux and Windows, and every release runs it before publishing.
 
 Release numbering and publishing are described in
 [RELEASING.md](https://github.com/OliveInnovations/EfMigrationPack/blob/main/RELEASING.md).

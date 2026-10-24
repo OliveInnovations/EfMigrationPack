@@ -15,7 +15,8 @@
     <PackageProjectUrl>https://github.com/OliveInnovations/EfMigrationPack</PackageProjectUrl>
     <RepositoryUrl>https://github.com/OliveInnovations/EfMigrationPack.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>efcore;entity-framework-core;ef-core;migrations;build-time</PackageTags>
+    <!-- The words people search for, including "squash", which is what most of them call this. -->
+    <PackageTags>efcore;entity-framework-core;ef-core;migrations;database-migrations;squash-migrations;consolidate-migrations;build-performance;build-time</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>

@@ -11,6 +11,9 @@ the originals into a zip outside the build. `dotnet ef-pack unpack` puts them ba
 The commands only read and write your project's source files: they never connect to a database or build the
 project. Works with EF Core 6 and later; runs on any .NET 6 or later runtime.
 
+Unlike squashing or resetting migrations, it doesn't need every database to be at the latest migration, and nobody
+has to rewrite `__EFMigrationsHistory` by hand.
+
 ## Install
 
 ```

@@ -12,6 +12,9 @@ originals into a zip. This package is what makes a pack safe to apply:
   own id, so databases at any point in your history catch up correctly;
 - every migration is reported as it finishes, and a failure names the migration that was running.
 
+Unlike squashing or resetting migrations, it doesn't need every database to be at the latest migration, and nobody
+has to rewrite `__EFMigrationsHistory` by hand.
+
 ## Choose the right version
 
 The package's major version matches the EF Core major it is built for, like a database provider:

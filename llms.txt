@@ -1,0 +1,29 @@
+# EfMigrationPack
+
+> Packs many Entity Framework Core migrations into one packed migration, to cut build times, without breaking databases at any point in the migration history. Each database still applies exactly the original migrations it's missing. Open source (MIT), for EF Core 6 to 10 on any relational provider.
+
+Use it when an EF Core project has hundreds of migrations and builds slowly. The slowness comes mostly from the `.Designer.cs` files: each holds `BuildTargetModel`, a full copy of the model at that point. A pack keeps a single target model and moves the original migration files into a zip outside the build.
+
+Unlike squashing or resetting migrations (deleting them and scaffolding a new `InitialCreate`), packing doesn't require every database to be at the latest migration, and nobody has to rewrite `__EFMigrationsHistory` by hand. Each original migration inside a pack runs only if the database hasn't recorded its id, and is then recorded under that id. Packs can be undone with `unpack`, which restores the original files exactly.
+
+Setup:
+
+1. Add the `EfMigrationPack` package to the migrations project, choosing the version whose major matches the EF Core major (8.x for EF Core 8).
+2. Call `.UsePackedMigrations()` on the DbContext options, including in any `IDesignTimeDbContextFactory`.
+3. Pack with `dotnet ef-pack pack <name>` (install with `dotnet tool install --global EfMigrationPack.Cli`), or with `Pack-Migrations <Name>` in Visual Studio's Package Manager Console (package `EfMigrationPack.Tools`).
+4. Apply packs as usual: `dotnet ef database update`, `Update-Database`, `Migrate()` or a migration bundle.
+
+Pack ids are `00` + the UTC time as `yyMMddHHmmss` + `_` + the name (for example `00261024111000_Sprint10`), so packs sort before every ordinary migration and never repeat.
+
+Main caveat: SQL scripts generated with `dotnet ef migrations script` depend on the history table of the database they are generated against, so deploy packs to existing databases with `Migrate()` or a bundle, or generate the script against a copy of the target.
+
+## Docs
+
+- [README](https://github.com/OliveInnovations/EfMigrationPack/blob/main/README.md): setup, commands, how it works, comparison with squashing, limitations and FAQ
+- [EfMigrationPack on NuGet](https://www.nuget.org/packages/EfMigrationPack): runtime package
+- [EfMigrationPack.Cli on NuGet](https://www.nuget.org/packages/EfMigrationPack.Cli): `dotnet ef-pack` command-line tool
+- [EfMigrationPack.Tools on NuGet](https://www.nuget.org/packages/EfMigrationPack.Tools): Package Manager Console commands
+
+## Optional
+
+- [Releasing](https://github.com/OliveInnovations/EfMigrationPack/blob/main/RELEASING.md): versioning and publishing

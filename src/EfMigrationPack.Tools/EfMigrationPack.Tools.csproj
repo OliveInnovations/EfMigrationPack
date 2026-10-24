@@ -16,7 +16,7 @@
 
     <PackageId>EfMigrationPack.Tools</PackageId>
     <VersionPrefix>1.$(PackRelease)</VersionPrefix>
-    <Description>Package Manager Console commands for packing EF Core migrations: Pack-Migrations and Unpack-Migrations. Works with EF Core 6 and later; projects reference the EfMigrationPack runtime package.</Description>
+    <Description>Squash EF Core migrations without breaking existing databases. Package Manager Console commands for packing EF Core migrations: Pack-Migrations and Unpack-Migrations. Works with EF Core 6 and later; projects reference the EfMigrationPack runtime package.</Description>
   </PropertyGroup>
 
   <ItemGroup>
