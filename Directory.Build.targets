@@ -7,10 +7,13 @@
   -->
   <PropertyGroup Condition="'$(IsPackable)' != 'false'">
     <PackageReadmeFile>$(PackageId).md</PackageReadmeFile>
+    <!-- An embedded icon (128x128 PNG), as nuget.org expects of packages under a reserved ID prefix. -->
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(IsPackable)' != 'false'">
     <None Include="$(MSBuildThisFileDirectory)docs/nuget/$(PackageId).md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)docs/nuget/icon.png" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
 
 </Project>

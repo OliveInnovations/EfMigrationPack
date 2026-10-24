@@ -1,4 +1,4 @@
-# ef-pack
+# <img src="docs/nuget/icon.png" width="40" height="40" alt=""> EfMigrationPack
 
 **Pack hundreds of EF Core migrations into one, without losing any of them.**
 
@@ -8,7 +8,7 @@
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/thepjo)
 
 A project with hundreds of migrations builds slowly, mostly because every `.Designer.cs` file holds a complete copy
-of your model as it was at that point. ef-pack folds the migrations into a single **packed migration** with one
+of your model as it was at that point. EfMigrationPack folds the migrations into a single **packed migration** with one
 target model, and moves the original files into a zip outside the build.
 
 Nothing is lost. When a pack is applied, each original migration inside it runs only if the database hasn't
@@ -219,7 +219,7 @@ applied), but unpacking reports the duplicates. Whichever merges second should u
 
 ## Support
 
-If ef-pack saves you build time, you can [buy me a coffee](https://www.buymeacoffee.com/thepjo). Thank you!
+If EfMigrationPack saves you build time, you can [buy me a coffee](https://www.buymeacoffee.com/thepjo). Thank you!
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/thepjo)
 

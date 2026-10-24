@@ -62,7 +62,7 @@ validated and indexed before they appear in search.
 | Summary in search results | `<Description>` in each `.csproj` |
 | Authors, licence, project and source links, tags | `Directory.Build.props` |
 | Owner | The organization that published it |
-| Icon | Not set yet: add a 128×128 PNG and `<PackageIcon>` to use one |
+| Icon | `docs/nuget/icon.png` (128×128 PNG, embedded in every package by `Directory.Build.targets`) |
 
 nuget.org renders a subset of Markdown: relative links don't work (use full GitHub URLs), and images only load from
 allowed hosts such as `img.shields.io`, which is why the badges use it.
